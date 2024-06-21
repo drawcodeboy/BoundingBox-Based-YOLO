@@ -1,0 +1,4 @@
+https://universe.roboflow.com/tennistracker-dogbm/object-detection-iqd6e
+version 4 사용
+
+내일 main.py 작업하기
