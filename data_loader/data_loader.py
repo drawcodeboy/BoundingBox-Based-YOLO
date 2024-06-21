@@ -1,7 +1,13 @@
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from PIL import Image
+import os
 
 class Compose(object):
     def __init__(self, transforms):
@@ -14,20 +20,23 @@ class Compose(object):
         return img, bboxes
 
 class TennisDataset(Dataset):
-    def __init__(self, csv_file, img_dir, label_dir, S=7, B=2, C=20, transform=None):
-        self.annotations = pd.read_csv(csv_file)
+    def __init__(self, img_dir, label_dir, S=7, B=2, C=20, transform=None):
         self.img_dir = img_dir
         self.label_dir = label_dir
+        self.label_path = os.listdir(label_dir)
         self.transform = transform
         self.S = S
         self.B = B
         self.C = C
 
     def __len__(self):
-        return len(self.annotations)
+        return len(self.label_path)
 
     def __getitem__(self, index):
-        label_path = os.path.join(self.label_dir, self.annotations.iloc[index, 1]) # Label 파일 위치
+        data_path = self.label_path[index] # Label 파일 위치
+        
+        label_path = os.path.join(self.label_dir, data_path)
+        # print(label_path)
         boxes = []
         with open(label_path) as f:
             for label in f.readlines(): # label 내용 불러오기
@@ -39,7 +48,9 @@ class TennisDataset(Dataset):
 
                 boxes.append([class_label, x, y, width, height])
 
-        img_path = os.path.join(self.img_dir, self.annotations.iloc[index, 0]) # 이미지 파일 위치
+        img_path = os.path.join(self.img_dir, (data_path[:-3] + 'jpg')) # 이미지 파일 위치
+        # print(img_path)
+        
         image = Image.open(img_path) # 이미지 불러오기
         boxes = torch.tensor(boxes) # box -> tensor 타입으로 바꾸기
 
@@ -91,10 +102,10 @@ def imgshow(img, box):
     for _, (i, j) in enumerate(index):
         dx, dy, dw, dh = box[i, j, 21:25]
 
-        x = dx*64 + i*64
-        y = dy*64 + j*64
-        w = int(dw*448)
-        h = int(dh*448)
+        x = dx*(img.shape[2]//7) + i*(img.shape[2]//7)
+        y = dy*(img.shape[1]//7) + j*(img.shape[1]//7)
+        w = int(dw*img.shape[2])
+        h = int(dh*img.shape[1])
         print(x, y, w, h)
 
         xx = np.max((int(x-w/2), 0))
@@ -116,7 +127,17 @@ def imgshow(img, box):
                 fill=False
             )
         )
+    plt.show()
     
 if __name__ == '__main__':
     transform = Compose([transforms.ToTensor(),])
-    ds = 
+    IMG_DIR = "data/object-detection.v4i.yolov5pytorch/train/images"
+    LABEL_DIR = "data/object-detection.v4i.yolov5pytorch/train/labels"
+    ds = TennisDataset(
+        img_dir = IMG_DIR,
+        label_dir = LABEL_DIR,
+        transform = transform
+    )
+    
+    print(ds[100][0].shape)
+    imgshow(ds[100][0], ds[100][1])
