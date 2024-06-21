@@ -48,6 +48,8 @@ class Yolov1(nn.Module):
 
     def forward(self, x):
         x = self.darknet(x)
+        print(x.shape)
+        print(torch.flatten(x, start_dim=1).shape)
         return self.fcs(torch.flatten(x, start_dim=1))
 
     def _create_conv_layers(self, architecture):
@@ -105,7 +107,7 @@ class Yolov1(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(1024 * S * S, 496),
+            nn.Linear(1024 * 17 * 30, 496),
             nn.Dropout(0.0),
             nn.LeakyReLU(0.1),
             # S, B, C = 7, 2, 20
@@ -199,7 +201,7 @@ class Yolov1_tuned(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(1024 * S * S, 496),
+            nn.Linear(1024 * 17 * 30, 496),
             nn.Dropout(0.0),
             nn.GELU(),
             # S, B, C = 7, 2, 20
@@ -208,6 +210,6 @@ class Yolov1_tuned(nn.Module):
 
 if __name__ == '__main__':
     model1 = Yolov1(split_size=7, num_boxes=2, num_classes=3)
-    summary(model1, (3, 448, 448))
+    summary(model1, (3, 1080, 1920))
     model2 = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3)
     summary(model2, (3, 448, 448))

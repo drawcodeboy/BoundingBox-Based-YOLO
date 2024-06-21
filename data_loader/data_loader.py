@@ -52,6 +52,7 @@ class TennisDataset(Dataset):
         # print(img_path)
         
         image = Image.open(img_path) # 이미지 불러오기
+        image = image.resize((1920, 1080))
         boxes = torch.tensor(boxes) # box -> tensor 타입으로 바꾸기
 
 
@@ -106,6 +107,7 @@ def imgshow(img, box):
         y = dy*(img.shape[1]//7) + j*(img.shape[1]//7)
         w = int(dw*img.shape[2])
         h = int(dh*img.shape[1])
+        print("pred")
         print(x, y, w, h)
 
         xx = np.max((int(x-w/2), 0))

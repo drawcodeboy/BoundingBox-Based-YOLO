@@ -3,21 +3,28 @@ from torch import nn
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
+import torchvision.transforms as transforms
 import torch.nn.functional as F
 
-from models.conv_net import ConvNet
-from data_loader.data_loader import CustomDataset
+from models.yolov1 import Yolov1, Yolov1_tuned
+from models.yololoss import YoloLoss
+from data_loader.data_loader import Compose, TennisDataset, imgshow
 
-from engine import train_one_epoch, evaluate
+from engine import train_one_epoch
 
 import argparse
 import matplotlib.pyplot as plt
-import pandas as pd
+import cv2
+import numpy as np
 import os
 import sys
 
 def get_args_parser():
     parser = argparse.ArgumentParser(add_help=False)
+    
+    # Model
+    # 1: YoloV1, 2: YoloV1_Tuned
+    parser.add_argument("--model", type=int, default=2)
     
     # Train or Inference
     parser.add_argument("--mode", type=str, default='train')
@@ -29,6 +36,9 @@ def get_args_parser():
     
     # utils
     parser.add_argument("--device", type=str, default='cpu')
+    
+    # Saved Loss Location
+    parser.add_argument("--file_name_loss", type=str)
     
     # Saved Model Location
     parser.add_argument("--file_name", type=str)
@@ -48,30 +58,42 @@ def main(args):
     
     if args.mode == 'train':
         # Load Model
-        model = ConvNet().to(device)
+        model = None
+        if args.model == 1:
+            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+        elif args.model == 2:
+            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(arg,sdevice)
         print('Load Model Complete')
+        
         # Load Loss Function
-        loss_fn = nn.CrossEntropyLoss()
+        loss_fn = nn.YoloLoss().to(args.device)
+        
         # Load Optimizer
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         
         # Load Dataset
-        ds = CustomDataset(df=pd.read_csv('data\mnist.csv'))
+        transform = Compose([transforms.ToTensor(),])
+        IMG_DIR = "data/object-detection.v4i.yolov5pytorch/train/images"
+        LABEL_DIR = "data/object-detection.v4i.yolov5pytorch/train/labels"
+        
+        ds = TennisDataset(
+            img_dir = IMG_DIR,
+            label_dir = LABEL_DIR,
+            transform = transform
+        )
         print('Load Dataset Complete')
-        # Train, Test Split
-        train_size = int(len(ds) * 0.7)
-        test_size = len(ds) - train_size
-        train_ds, test_ds = random_split(ds, [train_size, test_size])
+        
         # Load DataLoader
-        train_dl = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
-        test_dl = DataLoader(test_ds, batch_size=args.batch_size, shuffle=True)
+        train_dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True)
         
         # Train
+        loss_list = []
         print('====================')
         for epoch in range(args.epochs):
-            train_one_epoch(model, loss_fn, optimizer, train_dl, device, epoch+1, args.epochs)
-            evaluate(model, loss_fn, test_dl, device)
+            loss = train_one_epoch(model, loss_fn, optimizer, train_dl, args.device, epoch+1, args.epochs)
+            loss_list.append(loss)
             print('--------------------')
+        np.save(os.path.join('saved/loss', args.file_name_loss), np.array(loss_list))
             
         # Save Model
         if args.file_name:
@@ -83,30 +105,53 @@ def main(args):
                 
     elif args.mode == 'inference':
         # Load Trained Model
-        model = ConvNet().to(device)
+        model = None
+        if args.model == 1:
+            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+        elif args.model == 2:
+            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+        
         model.load_state_dict(torch.load(os.path.join('saved', args.file_name)))
         model.eval()
         print('Load Model Complete')
         
-        # Load Dataset
-        ds = CustomDataset(df=pd.read_csv('data\mnist.csv'))
-        print('Load Dataset Complete')
-        
-        sample, target = ds[args.index]
-        logit = model(sample.reshape(1, *sample.shape))
-        
-        output = F.softmax(logit, dim=-1)
-        output = torch.argmax(output).item()
-        
-        img = sample.cpu().detach().numpy().reshape(28, 28)
-        
-        plt.imshow(img, cmap='gray')
-        plt.title(f"Predict {output}")
-        plt.axis('off')
-        plt.show()
+        cap = cv2.VideoCapture('data/딥러닝과제_테스트.mp4')
+
+        while(cap.isOpened()):
+            ret, frame = cap.read()
+            cv2.imshow('Tennis', frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("ConvNet-MNIST training and evaluation Script", parents=[get_args_parser()])
+    model = Yolov1(split_size=7, num_boxes=2, num_classes=3)
+    
+    cap = cv2.VideoCapture('data/딥러닝과제_테스트.mp4')
+
+    transform = transforms.ToTensor()
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        frame = cv2.resize(frame, dsize=(1920, 1080))
+        x = transform(frame)
+        x = x.reshape(-1, *x.shape)
+        
+        print(x.shape)
+        pred = model(x)
+        print(pred.shape)
+        pred[0, ..., 20] = (pred[0,...,20] > 0.60)*1
+        imgshow(x[0].detach().cpu(), pred[0].detach().cpu())
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    
+    sys.exit()
+    
+    parser = argparse.ArgumentParser("Yolo training and evaluation Script", parents=[get_args_parser()])
     args = parser.parse_args()
     
     main(args)

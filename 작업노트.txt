@@ -1,4 +1,7 @@
 https://universe.roboflow.com/tennistracker-dogbm/object-detection-iqd6e
 version 4 사용
 
-내일 main.py 작업하기
+yolo_tuned -> Layer Norm 쪽 보기
+main.py쪽 이미지 크기 다른 건 어떻게 해야할지...(훈련이랑 테스트 사이즈가 다름)
+-> 이에 대해 모델 쪽, 학습 쪽은 모두 1920x1080으로 맞추어 놓음
+imgshow에서 scaling하는 방법을 고려

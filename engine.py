@@ -8,6 +8,7 @@ def train_one_epoch(model: nn.Module, loss_fn: nn.Module, optimizer: optim.Optim
                     data_loader: DataLoader, device: torch.device, epoch: int, epochs: int):
     
     print(f"Epoch: [{epoch:03d}/{epochs:03d}]")
+    mean_loss = []
     
     model.train()
     
@@ -24,7 +25,7 @@ def train_one_epoch(model: nn.Module, loss_fn: nn.Module, optimizer: optim.Optim
         loss.backward()
         optimizer.step()
         
+        mean_loss.append(loss.item())
         print(f"\rTraining: {100*batch_idx/len(data_loader):.2f}% Loss: {loss.item():.4f}", end="")
-    print()
 
-
+    return sum(mean_loss)/len(mean_loss) 
