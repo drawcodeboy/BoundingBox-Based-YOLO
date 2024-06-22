@@ -10,6 +10,11 @@ cv2 크기 -> 해결
 모델 크기 -> 줄임
 변경 사항 4 구현 완료
 
+할 일
+evaluate 구현 class 별로 AP 계산 -> mAP
+테스트 데이터셋
+코랩에서 학습
+
 학습 command
 
 [Yolov1 학습 Command]

@@ -6,7 +6,7 @@ from torch.utils.data import random_split
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 
-from models.yolov1 import Yolov1, Yolov1_tuned
+from models.yolov1 import Yolov1, BBBasedYolov1
 from models.yololoss import YoloLoss
 from data_loader.data_loader import Compose, TennisDataset, imgshow
 
@@ -25,7 +25,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser(add_help=False)
     
     # Model
-    # 1: YoloV1, 2: YoloV1_Tuned
+    # 1: YoloV1, 2: BBBasedYolov1
     parser.add_argument("--model", type=int, default=2)
     
     # Train or Inference
@@ -62,7 +62,7 @@ def main(args):
         if args.model == 1:
             model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         elif args.model == 2:
-            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(device)
+            model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         print('Load Model Complete')
         
         # Load Loss Function
@@ -102,14 +102,26 @@ def main(args):
                 print("Saving Model Success!")
             except:
                 print("Saving Model Failed...")
-                
+
+    elif args.mode == 'test':
+        # Load Trained Model
+        model = None
+        if args.model == 1:
+            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
+        elif args.model == 2:
+            model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
+        
+        model.load_state_dict(torch.load(os.path.join('saved', args.file_name)))
+        model.eval()
+        print('Load Model Complete')
+        
     elif args.mode == 'inference':
         # Load Trained Model
         model = None
         if args.model == 1:
             model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         elif args.model == 2:
-            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(device)
+            model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         
         model.load_state_dict(torch.load(os.path.join('saved', args.file_name)))
         model.eval()

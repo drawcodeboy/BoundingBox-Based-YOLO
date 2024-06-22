@@ -126,10 +126,21 @@ class CBABlock2(nn.Module):
 
     def forward(self, x):
         return self.gelu(self.layernorm(self.conv(x)))
+    
+class MLPBlock(nn.Module):
+    def __init__(self, in_features=4):
+        super(MLPBlock, self).__init__()
+        
+        self.l1 = nn.Linear(in_features, 2*in_features, bias=False)
+        self.l2 = nn.Linear(2*in_features, 1, bias=False)
+        self.acti = nn.GELU()
+    
+    def forward(self, x):
+        return self.l2(self.acti(self.l1(x)))
 
-class Yolov1_tuned(nn.Module):
+class BBBasedYolov1(nn.Module):
     def __init__(self, in_channels=3, **kwargs):
-        super(Yolov1_tuned, self).__init__()
+        super(BBBasedYolov1, self).__init__()
         self.architecture = architecture_config
         self.in_channels = in_channels
         self.darknet = self._create_conv_layers(self.architecture)
@@ -140,7 +151,7 @@ class Yolov1_tuned(nn.Module):
         # 변경 사항 (4): Objectness Score based Bounding Boxes
         self.mlp_set = nn.ModuleList([
                             nn.ModuleList([
-                                nn.ModuleList([nn.Linear(4, 1) for _ in range(0, self.B)]) 
+                                nn.ModuleList([MLPBlock(4) for _ in range(0, self.B)]) 
                             for __ in range(0, self.S)]) 
                         for ___ in range(0, self.S)])
         # 시그모이드의 경우 여기서는 Gradient Vanshing을 야기하지는 않는다.
@@ -233,5 +244,5 @@ class Yolov1_tuned(nn.Module):
 if __name__ == '__main__':
     model1 = Yolov1(split_size=7, num_boxes=2, num_classes=3)
     summary(model1, (3, 540, 960))
-    model2 = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3)
+    model2 = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3)
     summary(model2, (3, 540, 960))

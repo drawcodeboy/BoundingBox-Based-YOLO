@@ -29,3 +29,6 @@ def train_one_epoch(model: nn.Module, loss_fn: nn.Module, optimizer: optim.Optim
         print(f"\rTraining: {100*batch_idx/len(data_loader):.2f}% Loss: {loss.item():.4f}", end="")
 
     return sum(mean_loss)/len(mean_loss) 
+
+def evaluate(model: nn.Module, data_loader: DataLoader, device: torch.device):
+    pass
