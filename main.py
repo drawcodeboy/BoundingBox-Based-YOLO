@@ -19,6 +19,8 @@ import numpy as np
 import os
 import sys
 
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 def get_args_parser():
     parser = argparse.ArgumentParser(add_help=False)
     
@@ -43,8 +45,6 @@ def get_args_parser():
     # Saved Model Location
     parser.add_argument("--file_name", type=str)
     
-    # Inference Data Index
-    parser.add_argument("--index", type=int, default=0)
     return parser
 
 
@@ -60,13 +60,13 @@ def main(args):
         # Load Model
         model = None
         if args.model == 1:
-            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         elif args.model == 2:
-            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(arg,sdevice)
+            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(device)
         print('Load Model Complete')
         
         # Load Loss Function
-        loss_fn = nn.YoloLoss().to(args.device)
+        loss_fn = nn.YoloLoss().to(device)
         
         # Load Optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -90,7 +90,7 @@ def main(args):
         loss_list = []
         print('====================')
         for epoch in range(args.epochs):
-            loss = train_one_epoch(model, loss_fn, optimizer, train_dl, args.device, epoch+1, args.epochs)
+            loss = train_one_epoch(model, loss_fn, optimizer, train_dl, device, epoch+1, args.epochs)
             loss_list.append(loss)
             print('--------------------')
         np.save(os.path.join('saved/loss', args.file_name_loss), np.array(loss_list))
@@ -107,49 +107,35 @@ def main(args):
         # Load Trained Model
         model = None
         if args.model == 1:
-            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+            model = Yolov1(split_size=7, num_boxes=2, num_classes=3).to(device)
         elif args.model == 2:
-            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(args.device)
+            model = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3).to(device)
         
         model.load_state_dict(torch.load(os.path.join('saved', args.file_name)))
         model.eval()
         print('Load Model Complete')
         
         cap = cv2.VideoCapture('data/딥러닝과제_테스트.mp4')
+        
+        transform = transforms.ToTensor()
 
         while(cap.isOpened()):
             ret, frame = cap.read()
-            cv2.imshow('Tennis', frame)
+            frame = cv2.resize(frame, dsize=(960, 540))
+            x = transform(frame)
+            x = x.reshape(-1, *x.shape)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            print(x.shape)
+            pred = model(x)
+            print(pred.shape)
+            pred[0, ..., 20] = (pred[0,...,20] > 0.60)*1
+            imgshow(x[0].detach().cpu(), pred[0].detach().cpu())
+            cv2.waitKey(1)
+            
         cap.release()
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    model = Yolov1(split_size=7, num_boxes=2, num_classes=3)
-    
-    cap = cv2.VideoCapture('data/딥러닝과제_테스트.mp4')
-
-    transform = transforms.ToTensor()
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        frame = cv2.resize(frame, dsize=(1920, 1080))
-        x = transform(frame)
-        x = x.reshape(-1, *x.shape)
-        
-        print(x.shape)
-        pred = model(x)
-        print(pred.shape)
-        pred[0, ..., 20] = (pred[0,...,20] > 0.60)*1
-        imgshow(x[0].detach().cpu(), pred[0].detach().cpu())
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cap.release()
-    cv2.destroyAllWindows()
-    
-    sys.exit()
     
     parser = argparse.ArgumentParser("Yolo training and evaluation Script", parents=[get_args_parser()])
     args = parser.parse_args()

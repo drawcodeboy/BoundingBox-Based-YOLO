@@ -3,6 +3,8 @@ from torch import nn
 
 from torchsummary import summary
 
+import sys
+
 # CNN Architectrue -> DarkNet
 
 architecture_config = [
@@ -48,8 +50,6 @@ class Yolov1(nn.Module):
 
     def forward(self, x):
         x = self.darknet(x)
-        print(x.shape)
-        print(torch.flatten(x, start_dim=1).shape)
         return self.fcs(torch.flatten(x, start_dim=1))
 
     def _create_conv_layers(self, architecture):
@@ -107,7 +107,7 @@ class Yolov1(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(1024 * 17 * 30, 496),
+            nn.Linear(122880, 496),
             nn.Dropout(0.0),
             nn.LeakyReLU(0.1),
             # S, B, C = 7, 2, 20
@@ -134,12 +134,34 @@ class Yolov1_tuned(nn.Module):
         self.in_channels = in_channels
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
+        self.S, self.B, self.C = (kwargs['split_size'], kwargs['num_boxes'], kwargs['num_classes'])
+        # print(self.S, self.B, self.C, type(kwargs), kwargs)
+        
+        # 변경 사항 (4): Objectness Score based Bounding Boxes
+        self.mlp_set = nn.ModuleList([
+                            nn.ModuleList([
+                                nn.ModuleList([nn.Linear(4, 1) for _ in range(0, self.B)]) 
+                            for __ in range(0, self.S)]) 
+                        for ___ in range(0, self.S)])
+        # 시그모이드의 경우 여기서는 Gradient Vanshing을 야기하지는 않는다.
+        self.sigmoid = nn.Sigmoid()
         
         self.apply(self._init_weights)
 
     def forward(self, x):
         x = self.darknet(x)
-        return self.fcs(torch.flatten(x, start_dim=1))
+        x = self.fcs(torch.flatten(x, start_dim=1))
+        x = x.reshape(x.shape[0], self.S, self.S, self.C + self.B*5)
+        
+        # 변경 사항 4에 대한 forward
+        for i in range(0, self.S):
+            for j in range(0, self.S):
+                    x[..., i, j, self.C] = x[..., i, j, self.C] * self.sigmoid(self.mlp_set[i][j][0](x[..., i, j, (self.C+1):(self.C+5)])).reshape(x.shape[0])
+                    x[..., i, j, (self.C+5)] = x[..., i, j, (self.C+5)] * self.sigmoid(self.mlp_set[i][j][1](x[..., i, j, (self.C+6):(self.C+10)])).reshape(x.shape[0])
+        
+        x = torch.flatten(x, start_dim=1)
+        
+        return x
     
     # 변경사항 (3): 가중치 초기화 Xaiver
     def _init_weights(self, m):
@@ -154,7 +176,7 @@ class Yolov1_tuned(nn.Module):
             # 첫 번째 x = (7,64,2,3)
             if type(x) == tuple:
                 layers += [
-                        CBABlock2( # 사람이 정의한 block
+                        CBABlock2(
                         in_channels, x[1], kernel_size=x[0], stride=x[2], padding=x[3],
                     )
                     ]
@@ -201,7 +223,7 @@ class Yolov1_tuned(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(1024 * 17 * 30, 496),
+            nn.Linear(122880, 496),
             nn.Dropout(0.0),
             nn.GELU(),
             # S, B, C = 7, 2, 20
@@ -210,6 +232,6 @@ class Yolov1_tuned(nn.Module):
 
 if __name__ == '__main__':
     model1 = Yolov1(split_size=7, num_boxes=2, num_classes=3)
-    summary(model1, (3, 1080, 1920))
+    summary(model1, (3, 540, 960))
     model2 = Yolov1_tuned(split_size=7, num_boxes=2, num_classes=3)
-    summary(model2, (3, 448, 448))
+    summary(model2, (3, 540, 960))

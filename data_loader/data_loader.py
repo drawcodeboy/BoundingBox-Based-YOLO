@@ -4,10 +4,13 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
 import numpy as np
+import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image
 import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class Compose(object):
     def __init__(self, transforms):
@@ -20,7 +23,7 @@ class Compose(object):
         return img, bboxes
 
 class TennisDataset(Dataset):
-    def __init__(self, img_dir, label_dir, S=7, B=2, C=20, transform=None):
+    def __init__(self, img_dir, label_dir, S=7, B=2, C=3, transform=None):
         self.img_dir = img_dir
         self.label_dir = label_dir
         self.label_path = os.listdir(label_dir)
@@ -52,7 +55,7 @@ class TennisDataset(Dataset):
         # print(img_path)
         
         image = Image.open(img_path) # 이미지 불러오기
-        image = image.resize((1920, 1080))
+        image = image.resize((960, 540))
         boxes = torch.tensor(boxes) # box -> tensor 타입으로 바꾸기
 
 
@@ -75,44 +78,44 @@ class TennisDataset(Dataset):
             x_cell = self.S * x - i
             y_cell = self.S * y - j
 
-            if label_matrix[i, j, 20] == 0:
+            if label_matrix[i, j, 3] == 0:
 
                 box_coordinates = torch.tensor(
                     # dx, dy, dw, dh
                     [x_cell, y_cell, width, height]
                 )
 
-                label_matrix[i, j, 20] = 1
-                label_matrix[i, j, 21:25] = box_coordinates
+                label_matrix[i, j, 3] = 1
+                label_matrix[i, j, 4:8] = box_coordinates
                 label_matrix[i, j, class_label] = 1
 
         return image, label_matrix
 
 def imgshow(img, box):
     # Target이 있는 index를 2차원에서 1차원으로 flatten하여 나타낸다.
-    inx = torch.where(box[..., 20].view(-1) == 1)[0] # 여기가 핵심코드네
+    inx = torch.where(box[..., 3].view(-1) == 1)[0] # 여기가 핵심코드네
 
     index = []
 
     for i in inx:
         index.append(divmod(i.numpy(), 7)) # 몇 번째 cell에 있는지 구함
 
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.imshow(img.permute(1, 2, 0))
+    # fig, ax = plt.subplots(figsize=(5, 5))
+    img_ = img.permute(1, 2, 0).numpy().copy()
 
     for _, (i, j) in enumerate(index):
-        dx, dy, dw, dh = box[i, j, 21:25]
+        dx, dy, dw, dh = box[i, j, 4:8]
 
         x = dx*(img.shape[2]//7) + i*(img.shape[2]//7)
         y = dy*(img.shape[1]//7) + j*(img.shape[1]//7)
         w = int(dw*img.shape[2])
         h = int(dh*img.shape[1])
-        print("pred")
-        print(x, y, w, h)
 
         xx = np.max((int(x-w/2), 0))
         yy = np.max((int(y-h/2), 0))
+        print(x, y, w, h, xx, yy)
 
+        '''
         ax.add_patch(
             patches.Circle(
                 (x, y),
@@ -128,8 +131,12 @@ def imgshow(img, box):
                 edgecolor = 'red',
                 fill=False
             )
-        )
-    plt.show()
+        )'''
+        
+        img_ = cv2.rectangle(img_, (xx, yy), (xx+w, yy+h), color=(255, 0, 0), thickness=1)
+    cv2.namedWindow("Yolo", cv2.WINDOW_NORMAL) 
+    cv2.resizeWindow("Yolo", 960, 540)
+    cv2.imshow('Yolo', img_)
     
 if __name__ == '__main__':
     transform = Compose([transforms.ToTensor(),])
@@ -143,3 +150,4 @@ if __name__ == '__main__':
     
     print(ds[100][0].shape)
     imgshow(ds[100][0], ds[100][1])
+    cv2.waitKey(0)

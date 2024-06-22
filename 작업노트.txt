@@ -5,3 +5,21 @@ yolo_tuned -> Layer Norm 쪽 보기
 main.py쪽 이미지 크기 다른 건 어떻게 해야할지...(훈련이랑 테스트 사이즈가 다름)
 -> 이에 대해 모델 쪽, 학습 쪽은 모두 1920x1080으로 맞추어 놓음
 imgshow에서 scaling하는 방법을 고려
+
+cv2 크기 -> 해결
+모델 크기 -> 줄임
+변경 사항 4 구현 완료
+
+학습 command
+
+[Yolov1 학습 Command]
+python main.py --model=1 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_100epochs.pt
+
+[Yolov1 Tuned 학습 Command]
+python main.py --model=2 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_tuned_loss.npy --file_name=yolov1_tuned_100epochs.pt
+
+[Yolov1 영상 추론 Command]
+python main.py --model=1 --mode=inference --device=cuda --file_name=yolov1_100epochs.pt
+
+[Yolov1 영상 추론 Command]
+python main.py --model=2 --mode=inference --device=cuda --file_name=yolov1_tuned_100epochs.pt
