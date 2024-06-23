@@ -24,7 +24,7 @@ mAP 계산 코드
 
 학습 command
 
-[Yolov1 학습 Command] (Tennis)
+[Yolov1 학습 Command] (Tennis) (필요 없음)
 python main.py --model=1 --mode=train --data=tennis --epochs=1=200 --lr=0.00001 --batch_size=16 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_200epochs.pt
 
 [BoundingBox-Based Yolov1 학습 Command] (Tennis)
