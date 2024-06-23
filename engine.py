@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
 
 def train_one_epoch(model: nn.Module, loss_fn: nn.Module, optimizer: optim.Optimizer,
                     data_loader: DataLoader, device: torch.device, epoch: int, epochs: int):

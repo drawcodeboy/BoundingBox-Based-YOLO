@@ -70,10 +70,11 @@ class CoordConvBlock(nn.Module):
         return self.conv2(self.gelu(self.conv1(x)))
 
 class BBBasedYolov1(nn.Module):
-    def __init__(self, in_channels=3, **kwargs):
+    def __init__(self, in_channels=3, width=448, height=448, **kwargs):
         super(BBBasedYolov1, self).__init__()
         self.architecture = architecture_config
         self.in_channels = in_channels
+        self.width, self.height = width, height # Linear in_features 계산을 위해 입력으로 받도록 함.
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
         self.S, self.B, self.C = (kwargs['split_size'], kwargs['num_boxes'], kwargs['num_classes'])
@@ -172,6 +173,7 @@ class BBBasedYolov1(nn.Module):
 
     def _create_fcs(self, split_size, num_boxes, num_classes):
         S, B, C = split_size, num_boxes, num_classes
+        print(S, B, C)
 
         #In original paper this shuld be
         #nn.Linear(1024*S*S, 4096),
@@ -180,7 +182,7 @@ class BBBasedYolov1(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(122880, 496),
+            nn.Linear(1024 * int(self.width//64) * int(self.height//64), 496),
             nn.Dropout(0.0),
             nn.GELU(),
             # S, B, C = 7, 2, 20
@@ -192,7 +194,7 @@ if __name__ == '__main__':
     #summary(temp, (8, 7, 7))
     #sys.exit()
     
-    model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3)
+    model = BBBasedYolov1(split_size=7, width=960, height=540, num_boxes=2, num_classes=3)
     summary(model, (3, 540, 960))
     x = torch.randn(1, 3, 540, 960)
     o = model(x)

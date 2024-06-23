@@ -22,12 +22,18 @@ class Compose(object):
 
         return img, bboxes
 
-class TennisDataset(Dataset):
-    def __init__(self, img_dir, label_dir, S=7, B=2, C=3, transform=None):
+class CustomDataset(Dataset):
+    def __init__(self, img_dir, label_dir, S=7, B=2, C=3, width=448, height=448, length=None, transform=None):
         self.img_dir = img_dir
         self.label_dir = label_dir
         self.label_path = os.listdir(label_dir)
+        
+        if length is not None:
+            # 작동 테스트를 위한 데이터셋 크기 지정
+            self.label_path = self.label_path[:length]
+        
         self.transform = transform
+        self.width, self.height = width, height
         self.S = S
         self.B = B
         self.C = C
@@ -55,7 +61,7 @@ class TennisDataset(Dataset):
         # print(img_path)
         
         image = Image.open(img_path) # 이미지 불러오기
-        image = image.resize((960, 540))
+        image = image.resize((self.width, self.height)) # 사이즈 변경
         boxes = torch.tensor(boxes) # box -> tensor 타입으로 바꾸기
 
 
@@ -85,15 +91,15 @@ class TennisDataset(Dataset):
                     [x_cell, y_cell, width, height]
                 )
 
-                label_matrix[i, j, 3] = 1
-                label_matrix[i, j, 4:8] = box_coordinates
+                label_matrix[i, j, self.C] = 1
+                label_matrix[i, j, self.C+1:self.C+5] = box_coordinates
                 label_matrix[i, j, class_label] = 1
 
         return image, label_matrix
 
 def imgshow(img, box):
     # Target이 있는 index를 2차원에서 1차원으로 flatten하여 나타낸다.
-    inx = torch.where(box[..., 3].view(-1) == 1)[0] # 여기가 핵심코드네
+    inx = torch.where(box[..., 3].view(-1) == 1)[0]
 
     index = []
 
@@ -102,6 +108,9 @@ def imgshow(img, box):
 
     # fig, ax = plt.subplots(figsize=(5, 5))
     img_ = img.permute(1, 2, 0).numpy().copy()
+    img_ = cv2.cvtColor(img_, cv2.COLOR_BGR2RGB)
+    print(img.shape)
+    print(box.shape)
 
     for _, (i, j) in enumerate(index):
         dx, dy, dw, dh = box[i, j, 4:8]
@@ -113,7 +122,8 @@ def imgshow(img, box):
 
         xx = np.max((int(x-w/2), 0))
         yy = np.max((int(y-h/2), 0))
-        print(x, y, w, h, xx, yy)
+        
+        print(xx, yy, w, h)
 
         '''
         ax.add_patch(
@@ -133,21 +143,38 @@ def imgshow(img, box):
             )
         )'''
         
-        img_ = cv2.rectangle(img_, (xx, yy), (xx+w, yy+h), color=(255, 0, 0), thickness=1)
-    cv2.namedWindow("Yolo", cv2.WINDOW_NORMAL) 
-    cv2.resizeWindow("Yolo", 960, 540)
+        img_ = cv2.rectangle(img_, (xx, yy), (xx+w, yy+h), color=(255, 0, 0), thickness=2)
+    cv2.namedWindow("Yolo", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("Yolo", (img_.shape[1], img_.shape[0]))
     cv2.imshow('Yolo', img_)
     
 if __name__ == '__main__':
     transform = Compose([transforms.ToTensor(),])
     IMG_DIR = "data/object-detection.v4i.yolov5pytorch/train/images"
     LABEL_DIR = "data/object-detection.v4i.yolov5pytorch/train/labels"
-    ds = TennisDataset(
+    ds = CustomDataset(
         img_dir = IMG_DIR,
         label_dir = LABEL_DIR,
-        transform = transform
+        transform = transform,
+        width=960,
+        height=540
+    )
+    imgshow(ds[101][0], ds[101][1])
+    cv2.waitKey(0)
+    
+    '''
+    IMG_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images"
+    LABEL_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels"
+    ds = CustomDataset(
+        img_dir = IMG_DIR,
+        label_dir = LABEL_DIR,
+        transform = transform,
+        C = 1000,
+        width=448,
+        height=448
     )
     
-    print(ds[100][0].shape)
-    imgshow(ds[100][0], ds[100][1])
+    print(f"img tensor shape {ds[100][0].shape}")
+    imgshow(ds[101][0], ds[101][1])
     cv2.waitKey(0)
+    '''

@@ -13,21 +13,61 @@ cv2 크기 -> 해결
 할 일
 evaluate 구현 class 별로 AP 계산 -> mAP
 테스트 데이터셋
-코랩에서 학습
+logging 모듈 알아보기
+동방 GPU 사용
+
+필요한 거
+main.py의 test 쪽 코드
+mAP 계산 코드
+
+===============================================================
 
 학습 command
 
-[Yolov1 학습 Command]
-python main.py --model=1 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_100epochs.pt
+[Yolov1 학습 Command] (Tennis)
+python main.py --model=1 --mode=train --data=tennis --epochs=1=200 --lr=0.00001 --batch_size=16 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_200epochs.pt
 
-[BoundingBox-Based Yolov1 학습 Command]
-python main.py --model=2 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_tuned_loss.npy --file_name=yolov1_tuned_100epochs.pt
+[BoundingBox-Based Yolov1 학습 Command] (Tennis)
+python main.py --model=2 --mode=train --data=tennis --epochs=200 --lr=0.00001 --batch_size=16 --device=cuda --file_name_loss=bb_based_yolov1_loss.npy --file_name=bb_based_yolov1_200epochs.pt
 
-[Yolov1 영상 추론 Command]
-python main.py --model=1 --mode=inference --device=cuda --file_name=yolov1_100epochs.pt
+[Yolov1 영상 추론 Command] (Tennis)
+python main.py --model=1 --mode=inference --data=tennis --device=cuda --file_name=yolov1_200epochs.pt
+
+[BoundingBox-Based Yolov1 영상 추론 Command] (Tennis)
+python main.py --model=2 --mode=inference --data=tennis --device=cuda --file_name=yolov1_tuned_200epochs.pt
+
+[Yolov1 학습 Command] (PASCAL)
+python main.py --model=1 --mode=train --data=pascal --epochs=1=200 --lr=0.00001 --batch_size=16 --device=cuda --file_name_loss=yolov1_pascal_loss.npy --file_name=yolov1_pascal_200epochs.pt
+
+[BoundingBox-Based Yolov1 학습 Command] (PASCAL)
+python main.py --model=2 --mode=train --data=pascal --epochs=200 --lr=0.00001 --batch_size=16 --device=cuda --file_name_loss=bb_based_yolov1_pascal_loss.npy --file_name=bb_based_yolov1_pascal_200epochs.pt
+
+======================================================================
+
+[Yolov1 작동 테스트용 훈련 command]
+python main.py --model=1 --mode=train --data=tennis --epochs=2 --lr=0.00001 --batch_size=8 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_2epochs.pt --worktest=y
+
+[BoundingBox-Based Yolov1 작동 테스트용 훈련 command]
+python main.py --model=2 --mode=train --data=tennis --epochs=2 --lr=0.00001 --batch_size=8 --device=cuda --file_name_loss=bb_based_yolov1_loss.npy --file_name=bb_based_yolov1_2epochs.pt --worktest=y
+
+[Yolov1 VOC 작동 테스트용 훈련 command]
+python main.py --model=1 --mode=train --data=pascal --epochs=2 --lr=0.00001 --batch_size=8 --device=cuda --file_name_loss=yolov1_pascal_loss.npy --file_name=yolov1_pascal_2epochs.pt --worktest=y
+
+[BoundingBox-Based Yolov1 VOC 작동 테스트용 훈련 command]
+python main.py --model=2 --mode=train --data=pascal --epochs=2 --lr=0.00001 --batch_size=8 --device=cuda --file_name_loss=bb_based_yolov1_pascal_loss.npy --file_name=bb_based_yolov1_pascal_2epochs.pt --worktest=y
+
+[BoundingBox-Based Yolov1 VOC 작동 테스트용 테스트 command]
+python main.py --model=2 --mode=test --data=pascal --device=cuda --file_name=bb_based_yolov1_pascal_2epochs.pt --worktest=y
 
 [BoundingBox-Based Yolov1 영상 추론 Command]
-python main.py --model=2 --mode=inference --device=cuda --file_name=yolov1_tuned_100epochs.pt
+python main.py --model=2 --mode=inference --data=tennis --device=cuda --file_name=bb_based_yolov1_10epochs.pt
+
+[Yolov1 영상 추론 Command]
+python main.py --model=1 --mode=inference --data=tennis --device=cuda --file_name=yolov1_2epochs.pt
+
+==========================================================================
 
 [PASCAL VOC 2012 Dataset]
+클래스 20개
+
 https://public.roboflow.com/object-detection/pascal-voc-2012

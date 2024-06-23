@@ -41,10 +41,11 @@ class CBABlock(nn.Module):
         return self.leakyrelu(self.batchnorm(self.conv(x)))
 
 class Yolov1(nn.Module):
-    def __init__(self, in_channels=3, **kwargs):
+    def __init__(self, in_channels=3, width=448, height=448, **kwargs):
         super(Yolov1, self).__init__()
         self.architecture = architecture_config
         self.in_channels = in_channels
+        self.width, self.height = width, height # Linear in_features 계산을 위해 입력으로 받도록 함.
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
 
@@ -107,7 +108,7 @@ class Yolov1(nn.Module):
 
         return nn.Sequential(
             nn.Flatten(),
-            nn.Linear(122880, 496),
+            nn.Linear(1024 * int(self.width//64) * int(self.height//64), 496),
             nn.Dropout(0.0),
             nn.LeakyReLU(0.1),
             # S, B, C = 7, 2, 20
@@ -115,7 +116,7 @@ class Yolov1(nn.Module):
         )
 
 if __name__ == '__main__':
-    model = Yolov1(split_size=7, num_boxes=2, num_classes=3)
+    model = Yolov1(in_channels=3, width=960, height=540, split_size=7, num_boxes=2, num_classes=3)
     summary(model, (3, 540, 960))
     x = torch.randn(1, 3, 540, 960)
     o = model(x)
