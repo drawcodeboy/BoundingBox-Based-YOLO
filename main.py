@@ -6,8 +6,8 @@ from torch.utils.data import random_split
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 
-from models.yolov1 import Yolov1, BBBasedYolov1
-from models.yololoss import YoloLoss
+from models.YOLO import Yolov1, BBBasedYolov1
+from models.loss_function.yololoss import YoloLoss
 from data_loader.data_loader import Compose, TennisDataset, imgshow
 
 from engine import train_one_epoch

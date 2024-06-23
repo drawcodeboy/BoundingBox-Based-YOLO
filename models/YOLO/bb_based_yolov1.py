@@ -30,90 +30,6 @@ architecture_config = [
     (3, 1024, 1, 1),
 ]
 
-class CBABlock(nn.Module):
-    def __init__(self, in_channels, out_channels, **kwargs):
-        super(CBABlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
-        self.batchnorm = nn.BatchNorm2d(out_channels)
-        self.leakyrelu = nn.LeakyReLU(0.1)
-
-    def forward(self, x):
-        return self.leakyrelu(self.batchnorm(self.conv(x)))
-
-class Yolov1(nn.Module):
-    def __init__(self, in_channels=3, **kwargs):
-        super(Yolov1, self).__init__()
-        self.architecture = architecture_config
-        self.in_channels = in_channels
-        self.darknet = self._create_conv_layers(self.architecture)
-        self.fcs = self._create_fcs(**kwargs)
-
-    def forward(self, x):
-        x = self.darknet(x)
-        return self.fcs(torch.flatten(x, start_dim=1))
-
-    def _create_conv_layers(self, architecture):
-        layers = []
-        in_channels = self.in_channels
-
-        for x in architecture:
-            # 첫 번째 x = (7,64,2,3)
-            if type(x) == tuple:
-                layers += [
-                        CBABlock( # 사람이 정의한 block
-                        in_channels, x[1], kernel_size=x[0], stride=x[2], padding=x[3],
-                    )
-                    ]
-                in_channels = x[1]
-
-            elif type(x) == str:
-                layers += [nn.MaxPool2d(kernel_size=(2,2), stride=(2,2))]
-
-            elif type(x) == list:
-                conv1 = x[0]
-                conv2 = x[1]
-                num_repeats = x[2]
-
-                for _ in range(num_repeats):
-                    layers += [
-                        CBABlock(
-                            in_channels,
-                            conv1[1],
-                            kernel_size=conv1[0],
-                            stride=conv1[2],
-                            padding=conv1[3],
-                        )
-                    ]
-                    layers += [
-                        CBABlock(
-                            conv1[1],
-                            conv2[1],
-                            kernel_size = conv2[0],
-                            stride = conv2[2],
-                            padding = conv2[3],
-                        )
-                    ]
-                    in_channels = conv2[1]
-
-        return nn.Sequential(*layers)
-
-    def _create_fcs(self, split_size, num_boxes, num_classes):
-        S, B, C = split_size, num_boxes, num_classes
-
-        #In original paper this shuld be
-        #nn.Linear(1024*S*S, 4096),
-        #nn.LeakyReLU(0.1),
-        #nn.Linear(4096, S*S*(B*5+C))
-
-        return nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(122880, 496),
-            nn.Dropout(0.0),
-            nn.LeakyReLU(0.1),
-            # S, B, C = 7, 2, 20
-            nn.Linear(496, S * S * (C + B * 5)),
-        )
-
 class CBABlock2(nn.Module):
     def __init__(self, in_channels, out_channels, **kwargs):
         super(CBABlock2, self).__init__()
@@ -138,6 +54,17 @@ class MLPBlock(nn.Module):
     def forward(self, x):
         return self.l2(self.acti(self.l1(x)))
 
+class CoordConvBlock(nn.Module):
+    def __init__(self, in_channels=4, groups=2):
+        super(CoordConvBlock, self).__init__()
+        
+        self.conv1 = nn.Conv2d(groups*in_channels, groups*2*in_channels, kernel_size=1, groups=groups, bias=False)
+        self.conv2 = nn.Conv2d(groups*2*in_channels, groups, kernel_size=1, groups=groups, bias=False)
+        self.gelu = nn.GELU()
+    
+    def forward(self, x):
+        return self.conv2(self.gelu(self.conv1(x)))
+
 class BBBasedYolov1(nn.Module):
     def __init__(self, in_channels=3, **kwargs):
         super(BBBasedYolov1, self).__init__()
@@ -146,15 +73,20 @@ class BBBasedYolov1(nn.Module):
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
         self.S, self.B, self.C = (kwargs['split_size'], kwargs['num_boxes'], kwargs['num_classes'])
-        # print(self.S, self.B, self.C, type(kwargs), kwargs)
         
-        # 변경 사항 (4): Objectness Score based Bounding Boxes
+        # 변경 사항 (4): Objectness Score based Bounding Boxes : 병렬 연산 불가 -> 1x1 conv로 해결
+        '''
         self.mlp_set = nn.ModuleList([
                             nn.ModuleList([
                                 nn.ModuleList([MLPBlock(4) for _ in range(0, self.B)]) 
                             for __ in range(0, self.S)]) 
                         for ___ in range(0, self.S)])
+        '''
         # 시그모이드의 경우 여기서는 Gradient Vanshing을 야기하지는 않는다.
+        # self.sigmoid = nn.Sigmoid()
+        
+        # 셀 별 Bounding Box의 수만큼 생성
+        self.coord_blk = CoordConvBlock(in_channels=4, groups=self.B)
         self.sigmoid = nn.Sigmoid()
         
         self.apply(self._init_weights)
@@ -164,14 +96,21 @@ class BBBasedYolov1(nn.Module):
         x = self.fcs(torch.flatten(x, start_dim=1))
         x = x.reshape(x.shape[0], self.S, self.S, self.C + self.B*5)
         
-        # 변경 사항 4에 대한 forward
+        confidence_bbox = torch.stack((x[..., self.C+1:self.C+5], x[..., self.C+6:self.C+10]), dim=1)
+        confidence_bbox_score = self.sigmoid(self.coord_blk(confidence_bbox))
+        
+        x[..., self.C] *= confidence_bbox_score[..., 0]
+        x[..., self.C+5] *= confidence_bbox_score[..., 1]
+        
+        # 변경 사항 4에 대한 forward: 병렬 처리 불가 -> 1x1 conv로 해결
+        '''
         for i in range(0, self.S):
             for j in range(0, self.S):
                     x[..., i, j, self.C] = x[..., i, j, self.C] * self.sigmoid(self.mlp_set[i][j][0](x[..., i, j, (self.C+1):(self.C+5)])).reshape(x.shape[0])
                     x[..., i, j, (self.C+5)] = x[..., i, j, (self.C+5)] * self.sigmoid(self.mlp_set[i][j][1](x[..., i, j, (self.C+6):(self.C+10)])).reshape(x.shape[0])
+        '''
         
         x = torch.flatten(x, start_dim=1)
-        
         return x
     
     # 변경사항 (3): 가중치 초기화 Xaiver
@@ -242,7 +181,5 @@ class BBBasedYolov1(nn.Module):
         )
 
 if __name__ == '__main__':
-    model1 = Yolov1(split_size=7, num_boxes=2, num_classes=3)
-    summary(model1, (3, 540, 960))
-    model2 = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3)
-    summary(model2, (3, 540, 960))
+    model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3)
+    summary(model, (3, 540, 960))
