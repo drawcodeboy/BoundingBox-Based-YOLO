@@ -20,11 +20,14 @@ evaluate 구현 class 별로 AP 계산 -> mAP
 [Yolov1 학습 Command]
 python main.py --model=1 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_loss.npy --file_name=yolov1_100epochs.pt
 
-[Yolov1 Tuned 학습 Command]
+[BoundingBox-Based Yolov1 학습 Command]
 python main.py --model=2 --mode=train --epochs=100 --lr=0.0001 --batch_size=16 --device=cuda --file_name_loss=yolov1_tuned_loss.npy --file_name=yolov1_tuned_100epochs.pt
 
 [Yolov1 영상 추론 Command]
 python main.py --model=1 --mode=inference --device=cuda --file_name=yolov1_100epochs.pt
 
-[Yolov1 영상 추론 Command]
+[BoundingBox-Based Yolov1 영상 추론 Command]
 python main.py --model=2 --mode=inference --device=cuda --file_name=yolov1_tuned_100epochs.pt
+
+[PASCAL VOC 2012 Dataset]
+https://public.roboflow.com/object-detection/pascal-voc-2012
