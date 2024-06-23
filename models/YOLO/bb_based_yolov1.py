@@ -44,6 +44,10 @@ class CBABlock2(nn.Module):
         return self.gelu(self.layernorm(self.conv(x)))
     
 class MLPBlock(nn.Module):
+    r"""
+        헤당 MLP Block은 구현상으로 병렬적인 연산 처리 방식이 불가능하기 때문에
+        사용하지 않는다. -> 1x1 Conv로 대체하였다. -> CoordConvBlock
+    """
     def __init__(self, in_features=4):
         super(MLPBlock, self).__init__()
         
@@ -96,8 +100,11 @@ class BBBasedYolov1(nn.Module):
         x = self.fcs(torch.flatten(x, start_dim=1))
         x = x.reshape(x.shape[0], self.S, self.S, self.C + self.B*5)
         
-        confidence_bbox = torch.stack((x[..., self.C+1:self.C+5], x[..., self.C+6:self.C+10]), dim=1)
-        confidence_bbox_score = self.sigmoid(self.coord_blk(confidence_bbox))
+        # Bounding Box 좌표 추출 -> Concat (N, (셀 별 박스 수 * 좌표 수), self.S, self.S)
+        confidence_bbox = torch.cat((x[..., self.C+1:self.C+5].reshape(-1, 4, self.S, self.S).squeeze(1), 
+                                       x[..., self.C+6:self.C+10].reshape(-1, 4, self.S, self.S).squeeze(1)), dim=1)
+        
+        confidence_bbox_score = self.sigmoid(self.coord_blk(confidence_bbox)).reshape(-1, self.S, self.S, self.B)
         
         x[..., self.C] *= confidence_bbox_score[..., 0]
         x[..., self.C+5] *= confidence_bbox_score[..., 1]
@@ -181,5 +188,12 @@ class BBBasedYolov1(nn.Module):
         )
 
 if __name__ == '__main__':
+    # temp = CoordConvBlock()
+    #summary(temp, (8, 7, 7))
+    #sys.exit()
+    
     model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=3)
     summary(model, (3, 540, 960))
+    x = torch.randn(1, 3, 540, 960)
+    o = model(x)
+    print(o.shape)
