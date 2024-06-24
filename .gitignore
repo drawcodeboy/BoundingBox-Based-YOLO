@@ -19,3 +19,6 @@ data/*
 # saved weight
 saved/*
 !saved/temp.txt
+
+# saved loss
+!saved/loss/temp.txt
