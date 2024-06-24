@@ -32,13 +32,13 @@ python main.py --model=2 --mode=inference --data=tennis --device=cuda --file_nam
 https://public.roboflow.com/object-detection/pascal-voc-2012
 
 [Yolov1 학습 Command] (PASCAL)
-python main.py --model=1 --mode=train --data=pascal --epochs=1=100 --lr=0.00001 --batch_size=16 ^
+python main.py --model=1 --mode=train --data=pascal --epochs=100 --lr=0.00001 --batch_size=16 ^
 --device=cuda --file_name_loss=yolov1_pascal_loss.npy --file_name=yolov1_pascal_100epochs.pt ^
---image_dir= ^
---label_dir=
+--image_dir="/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images" ^
+--label_dir="/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels"
 
 [BoundingBox-Based Yolov1 학습 Command] (PASCAL)
 python main.py --model=2 --mode=train --data=pascal --epochs=100 --lr=0.00001 --batch_size=16 ^
 --device=cuda --file_name_loss=bb_based_yolov1_pascal_loss.npy --file_name=bb_based_yolov1_pascal_100epochs.pt ^
---image_dir=/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images ^
---label_dir=/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels
+--image_dir="/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images" ^
+--label_dir="/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels"

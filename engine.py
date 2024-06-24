@@ -25,7 +25,7 @@ def train_one_epoch(model: nn.Module, loss_fn: nn.Module, optimizer: optim.Optim
         optimizer.step()
         
         mean_loss.append(loss.item())
-        print(f"\rTraining: {100*batch_idx/len(data_loader):.2f}% Loss: {loss.item():.4f}", end="")
+        print(f"\rTraining: {100*batch_idx/len(data_loader):.2f}% Loss: {loss.item():.6f}", end="")
 
     return sum(mean_loss)/len(mean_loss) 
 
