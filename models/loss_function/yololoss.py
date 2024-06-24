@@ -44,7 +44,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint"):
 class YoloLoss(nn.Module):
     def __init__(self, S=7, B=2, C=3):
         super(YoloLoss, self).__init__()
-        self.mse = nn.MSELoss(reduction="sum")
+        self.mse = nn.MSELoss()
         # self.mse = mseloss(a,b)
         # def mseloss(a, b):
         #   return torch.mean((a-b)**2)
