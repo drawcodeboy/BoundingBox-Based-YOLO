@@ -35,6 +35,16 @@ def get_args_parser():
     # Dataset
     parser.add_argument("--data", type=str, default='tennis')
     
+    # Dataset Location
+    # 해당 Argument는 코랩에서 실행하다보니 데이터셋의 위치와 코드셋의 위치가 달라졌기 때문에
+    # Dataset의 위치를 인자로 받아서 처리하기 위함
+    parser.add_argument("--image_dir", type=str)
+    parser.add_argument("--label_dir", type=str)
+    
+    # Video Location
+    # Inference Video 위치
+    parser.add_argument("--video_loc", type=str)
+    
     # Hyperparameter
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -98,8 +108,8 @@ def main(args):
         
         if args.data == 'tennis':
             transform = Compose([transforms.ToTensor(),])
-            IMG_DIR = "data/object-detection.v4i.yolov5pytorch/train/images"
-            LABEL_DIR = "data/object-detection.v4i.yolov5pytorch/train/labels"
+            IMG_DIR = args.image_dir
+            LABEL_DIR = args.label_dir
             
             ds = CustomDataset(
                 img_dir = IMG_DIR,
@@ -113,8 +123,8 @@ def main(args):
         
         elif args.data == 'pascal':
             transform = Compose([transforms.ToTensor(),])
-            IMG_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images"
-            LABEL_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels"
+            IMG_DIR = args.image_dir
+            LABEL_DIR = args.label_dir
             
             ds = CustomDataset(
                 img_dir = IMG_DIR,
@@ -164,8 +174,8 @@ def main(args):
         # Load Dataset
         if args.data == 'tennis':
             transform = Compose([transforms.ToTensor(),])
-            IMG_DIR = "data/object-detection.v4i.yolov5pytorch/test/images"
-            LABEL_DIR = "data/object-detection.v4i.yolov5pytorch/test/labels"
+            IMG_DIR = args.image_dir
+            LABEL_DIR = args.label_dir
             
             ds = CustomDataset(
                 img_dir = IMG_DIR,
@@ -178,8 +188,8 @@ def main(args):
         
         elif args.data == 'pascal':
             transform = Compose([transforms.ToTensor(),])
-            IMG_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/valid/images"
-            LABEL_DIR = "data/Pascal VOC 2012.v1-raw.yolov5pytorch/valid/labels"
+            IMG_DIR = args.image_dir
+            LABEL_DIR = args.label_dir
             
             ds = CustomDataset(
                 img_dir = IMG_DIR,
@@ -214,7 +224,7 @@ def main(args):
         model.eval()
         print('Load Model Complete')
         
-        cap = cv2.VideoCapture('data/딥러닝과제_테스트.mp4')
+        cap = cv2.VideoCapture(args.video_loc)
         
         transform = transforms.ToTensor()
         
