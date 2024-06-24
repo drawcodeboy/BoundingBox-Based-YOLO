@@ -225,7 +225,7 @@ def main(args):
         elif args.model == 2:
             model = BBBasedYolov1(split_size=7, num_boxes=2, num_classes=num_classes, width=img_size[0], height=img_size[1]).to(device)
         
-        model.load_state_dict(torch.load(os.path.join('saved', args.file_name), map_location))
+        model.load_state_dict(torch.load(os.path.join('saved', args.file_name), map_location=device))
         model.eval()
         print('Load Model Complete')
         
