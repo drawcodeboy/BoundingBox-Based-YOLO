@@ -10,10 +10,12 @@
 .vscode/*
 
 # data
-data/
+data/*
+!data/temp.txt
 
 # pycache
 **/__pycache__/**
 
 # saved weight
-saved/
+saved/*
+!saved/temp.txt

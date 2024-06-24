@@ -25,8 +25,8 @@ mAP 계산 코드
 Command
 
 [BoundingBox-Based Yolov1 학습 Command] (Tennis) !!
-python main.py --model=2 --mode=train --data=tennis --epochs=200 --lr=0.00001 --batch_size=32 ^
---device=cuda --file_name_loss=bb_based_yolov1_loss.npy --file_name=bb_based_yolov1_100epochs.pt ^
+python main.py --model=2 --mode=train --data=tennis --epochs=200 --lr=0.00001 --batch_size=16 ^
+--device=cuda --file_name_loss=bb_based_yolov1_loss.npy --file_name=bb_based_yolov1_200epochs.pt ^
 --image_dir=/content/drive/MyDrive/object-detection.v4i.yolov5pytorch/train/images ^
 --label_dir=/content/drive/MyDrive/object-detection.v4i.yolov5pytorch/train/labels
 
@@ -35,13 +35,13 @@ python main.py --model=2 --mode=inference --data=tennis --device=cuda --file_nam
 --video_loc=/content/drive/MyDrive/딥러닝과제_테스트.mp4
 
 [Yolov1 학습 Command] (PASCAL)
-python main.py --model=1 --mode=train --data=pascal --epochs=1=200 --lr=0.00001 --batch_size=32 ^
+python main.py --model=1 --mode=train --data=pascal --epochs=1=200 --lr=0.00001 --batch_size=16 ^
 --device=cuda --file_name_loss=yolov1_pascal_loss.npy --file_name=yolov1_pascal_200epochs.pt ^
 --image_dir= ^
 --label_dir=
 
 [BoundingBox-Based Yolov1 학습 Command] (PASCAL)
-python main.py --model=2 --mode=train --data=pascal --epochs=200 --lr=0.00001 --batch_size=32 ^
+python main.py --model=2 --mode=train --data=pascal --epochs=200 --lr=0.00001 --batch_size=16 ^
 --device=cuda --file_name_loss=bb_based_yolov1_pascal_loss.npy --file_name=bb_based_yolov1_pascal_200epochs.pt ^
 --image_dir= ^
 --label_dir=
