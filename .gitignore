@@ -1,5 +1,10 @@
 # Virtual Environment
-.venv/*
+
+## Local
+.venv/* 
+
+## Gaonnuri GPU
+.venv2/* 
 
 # vscode
 .vscode/*
