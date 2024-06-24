@@ -247,8 +247,8 @@ def main(args):
             x = x.reshape(-1, *x.shape)
 
             pred = model(x).reshape(-1, 7, 7, 13)
-            pred[0, ..., 3] = (pred[0,...,3] > 0.)*1
-            pred[0, ..., 8] = (pred[0,...,8] > 0.)*1
+            pred[0, ..., 3] = (pred[0,...,3] > 0.3)*1
+            pred[0, ..., 8] = (pred[0,...,8] > 0.3)*1
             imgshow(x[0].detach().cpu(), pred[0].detach().cpu())
             
             if cv2.waitKey(1) == ord('q'):

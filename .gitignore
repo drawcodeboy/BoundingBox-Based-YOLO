@@ -21,5 +21,4 @@ saved/*
 !saved/temp.txt
 
 # saved loss
-!saved/loss
 !saved/loss/temp.txt

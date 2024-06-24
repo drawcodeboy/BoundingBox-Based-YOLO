@@ -1,0 +1,44 @@
+<사용한 데이터셋>
+
+https://universe.roboflow.com/tennistracker-dogbm/object-detection-iqd6e
+version 4 사용
+
+===============================================================
+<Command 정리>
+
+[BoundingBox-Based Yolov1 학습 Command] (Tennis) !! Colab
+!python main.py --model=2 --mode=train --data=tennis --epochs=100 --lr=0.00001 --batch_size=16 ^
+--device=cuda --file_name_loss=bb_based_yolov1_loss.npy --file_name=bb_based_yolov1_100epochs.pt ^
+--image_dir=/content/BoundingBox-Based-YOLO/data/object-detection.v4i.yolov5pytorch/train/images ^
+--label_dir=/content/BoundingBox-Based-YOLO/data/object-detection.v4i.yolov5pytorch/train/labels
+
+[BoundingBox-Based Yolov1 영상 추론 Command] (Tennis) !! Local
+python main.py --model=2 --mode=inference --data=tennis --device=cuda --file_name=bb_based_yolov1_100epochs.pt ^
+--video_loc=data/딥러닝과제_테스트.mp4
+
+==========================================================================
+<YOLO vs Bounding Box-based YOLO>
+- VOC PASCAL 2012 Dataset 학습을 통해 mAP를 측정하여 metric을 비교해서 어떤 모델이 성능이 좋은지 판별하는 것
+- YOLO의 목적에 의해 fps를 측정해보는 것도 좋을 듯 하다.
+
+- 해당 Task를 수행하기 위해서 필요한 것들
+ 1. YOLO, BB-based YOLO 데이터 학습
+ 2. main.py의 test 쪽 코드
+ 3. mAP 계산 코드
+ 4. 모델 mAP 평가 커맨드
+
+[PASCAL VOC 2012 Dataset]
+클래스 20개
+https://public.roboflow.com/object-detection/pascal-voc-2012
+
+[Yolov1 학습 Command] (PASCAL)
+python main.py --model=1 --mode=train --data=pascal --epochs=1=100 --lr=0.00001 --batch_size=16 ^
+--device=cuda --file_name_loss=yolov1_pascal_loss.npy --file_name=yolov1_pascal_100epochs.pt ^
+--image_dir= ^
+--label_dir=
+
+[BoundingBox-Based Yolov1 학습 Command] (PASCAL)
+python main.py --model=2 --mode=train --data=pascal --epochs=100 --lr=0.00001 --batch_size=16 ^
+--device=cuda --file_name_loss=bb_based_yolov1_pascal_loss.npy --file_name=bb_based_yolov1_pascal_100epochs.pt ^
+--image_dir=/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/images ^
+--label_dir=/content/BoundingBox-Based-YOLO/data/Pascal VOC 2012.v1-raw.yolov5pytorch/train/labels
