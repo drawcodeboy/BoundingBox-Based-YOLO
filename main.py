@@ -149,8 +149,13 @@ def main(args):
             loss = train_one_epoch(model, loss_fn, optimizer, train_dl, device, epoch+1, args.epochs)
             loss_list.append(loss)
             print('\n--------------------')
-        np.save(os.path.join('saved/loss', args.file_name_loss), np.array(loss_list))
-            
+        
+        try: 
+            np.save(os.path.join('saved/loss', args.file_name_loss), np.array(loss_list))
+            print("Saving Loss Success!")
+        except:
+            print("Saving Loss Failed...")
+        
         # Save Model
         if args.file_name:
             try:
