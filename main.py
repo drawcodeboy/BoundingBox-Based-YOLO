@@ -207,15 +207,7 @@ def main(args):
         
         print('Load Dataset Complete')
         
-        transform = transforms.ToTensor()
-        x = ds[100][0]
-        x = x.reshape(-1, *x.shape)
-
-        pred = model(x).reshape(-1, 7, 7, 30)
-        pred[0, ..., 3] = (pred[0,...,3] > 0.4)*1
-        pred[0, ..., 8] = (pred[0,...,8] > 0.4)*1
-        imgshow(x[0].detach().cpu(), pred[0].detach().cpu())
-        cv2.waitKey(0)
+        # 여기서부터 짜면 된다.
         
     elif args.mode == 'inference':
         # Load Trained Model
