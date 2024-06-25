@@ -50,6 +50,7 @@ def get_args_parser():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--weight_decay", type=float, default=0.)
+    parser.add_argument("--iou_threshold", type=float, default=0.5)
     
     # utils
     parser.add_argument("--device", type=str, default='cpu')
@@ -218,7 +219,7 @@ def main(args):
         print('Load Dataset Complete')
         
         # 여기서부터 짜면 된다.
-        evaluate(model, test_dl, device, num_classes, iou_threshold=0.5)
+        evaluate(model, test_dl, device, num_classes, iou_threshold=args.iou_threshold)
         
     elif args.mode == 'inference':
         # Load Trained Model
