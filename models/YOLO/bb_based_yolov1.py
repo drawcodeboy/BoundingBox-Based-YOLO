@@ -173,7 +173,6 @@ class BBBasedYolov1(nn.Module):
 
     def _create_fcs(self, split_size, num_boxes, num_classes):
         S, B, C = split_size, num_boxes, num_classes
-        print(S, B, C)
 
         #In original paper this shuld be
         #nn.Linear(1024*S*S, 4096),

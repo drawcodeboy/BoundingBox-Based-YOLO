@@ -10,7 +10,7 @@ from models.YOLO import Yolov1, BBBasedYolov1
 from models.loss_function.yololoss import YoloLoss
 from data_loader.data_loader import Compose, CustomDataset, imgshow
 
-from engine import train_one_epoch
+from engine import *
 
 import argparse
 import matplotlib.pyplot as plt
@@ -177,6 +177,11 @@ def main(args):
         print('Load Model Complete')
         
         # Load Dataset
+        length = None
+        if args.worktest == 'y':
+            print("Minimize Dataset for Test on CPU")
+            length = 64
+        
         if args.data == 'tennis':
             transform = Compose([transforms.ToTensor(),])
             IMG_DIR = args.image_dir
@@ -188,6 +193,7 @@ def main(args):
                 transform = transform,
                 width=img_size[0], 
                 height=img_size[1],
+                length=length,
                 C = num_classes
             )
         
@@ -202,12 +208,17 @@ def main(args):
                 transform = transform,
                 width=img_size[0], 
                 height=img_size[1],
+                length=length,
                 C = num_classes
             )
         
+        test_dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True)
+        
+        print(f"Dataset Length: {len(ds)}")
         print('Load Dataset Complete')
         
         # 여기서부터 짜면 된다.
+        evaluate(model, test_dl, device, num_classes, iou_threshold=0.5)
         
     elif args.mode == 'inference':
         # Load Trained Model
@@ -224,19 +235,6 @@ def main(args):
         cap = cv2.VideoCapture(args.video_loc)
         
         transform = transforms.ToTensor()
-        
-        '''
-        while(cap.isOpened()):
-            ret, frame = cap.read()
-            cv2.imshow('frame', frame)
-            print(type(frame))
-            if cv2.waitKey(25) == ord('q'):
-                break
-            
-        cap.release()
-        cv2.destroyAllWindows()
-        sys.exit()
-        '''
         
         while(cap.isOpened()):
             ret, frame = cap.read()
